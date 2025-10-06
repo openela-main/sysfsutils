@@ -1,0 +1,77 @@
+diff -up sysfsutils-2.1.1/lib/sysfs_attr.c.orig sysfsutils-2.1.1/lib/sysfs_attr.c
+--- sysfsutils-2.1.1/lib/sysfs_attr.c.orig	2024-07-29 13:45:04.415961682 +0200
++++ sysfsutils-2.1.1/lib/sysfs_attr.c	2024-07-29 13:52:54.927567946 +0200
+@@ -415,6 +415,7 @@ struct dlist *read_dir_links(const char
+ 					(SYSFS_NAME_LEN, sysfs_del_name);
+ 				if (!linklist) {
+ 					dbg_printf("Error creating list\n");
++					closedir(dir);
+ 					return NULL;
+ 				}
+ 			}
+@@ -470,6 +471,7 @@ struct sysfs_device *sysfs_read_dir_subd
+ 	dir = opendir(path);
+ 	if (!dir) {
+ 		dbg_printf("Error opening directory %s\n", path);
++		sysfs_close_device(dev);
+ 		return NULL;
+ 	}
+ 	while ((dirent = readdir(dir)) != NULL) {
+@@ -524,6 +526,7 @@ struct dlist *read_dir_subdirs(const cha
+ 					(SYSFS_NAME_LEN, sysfs_del_name);
+ 				if (!dirlist) {
+ 					dbg_printf("Error creating list\n");
++					closedir(dir);
+ 					return NULL;
+ 				}
+ 			}
+@@ -573,6 +576,7 @@ struct dlist *get_attributes_list(struct
+ 							sysfs_del_attribute);
+ 				if (!alist) {
+ 					dbg_printf("Error creating list\n");
++					closedir(dir);
+ 					return NULL;
+ 				}
+ 			}
+diff -up sysfsutils-2.1.1/lib/sysfs_device.c.orig sysfsutils-2.1.1/lib/sysfs_device.c
+--- sysfsutils-2.1.1/lib/sysfs_device.c.orig	2024-07-29 13:56:09.931819208 +0200
++++ sysfsutils-2.1.1/lib/sysfs_device.c	2024-07-29 14:00:07.958159026 +0200
+@@ -247,6 +247,7 @@ struct sysfs_device *sysfs_open_device_t
+ 			if (new == NULL) {
+ 				dbg_printf("Error opening device tree at %s\n",
+ 						cur->path);
++				sysfs_close_device(devlist);
+ 				sysfs_close_device_tree(rootdev);
+ 				return NULL;
+ 			}
+@@ -258,6 +259,7 @@ struct sysfs_device *sysfs_open_device_t
+ 		}
+ 	}
+ 
++	sysfs_close_device(devlist);
+ 	return rootdev;
+ }
+ 
+diff -up sysfsutils-2.1.1/lib/sysfs_driver.c.orig sysfsutils-2.1.1/lib/sysfs_driver.c
+--- sysfsutils-2.1.1/lib/sysfs_driver.c.orig	2021-02-19 10:49:00.000000000 +0100
++++ sysfsutils-2.1.1/lib/sysfs_driver.c	2024-07-29 13:43:43.461857368 +0200
+@@ -255,6 +255,7 @@ struct dlist *sysfs_get_driver_devices(s
+ 				if (!drv->devices) {
+ 					dbg_printf("Error creating device list\n");
+ 					sysfs_close_list(linklist);
++					sysfs_close_device(dev);
+ 					return NULL;
+ 				}
+ 			}
+diff -up sysfsutils-2.1.1/lib/sysfs_utils.c.orig sysfsutils-2.1.1/lib/sysfs_utils.c
+--- sysfsutils-2.1.1/lib/sysfs_utils.c.orig	2024-07-29 14:09:54.680028902 +0200
++++ sysfsutils-2.1.1/lib/sysfs_utils.c	2024-07-29 14:56:44.927888046 +0200
+@@ -151,7 +151,7 @@ int sysfs_get_link(const char *path, cha
+ 		return -1;
+ 	}
+ 
+-	count = readlink(path, linkpath, SYSFS_PATH_MAX);
++	count = readlink(path, linkpath, SYSFS_PATH_MAX - 1);
+ 	if (count < 0)
+ 		return -1;
+ 	else
