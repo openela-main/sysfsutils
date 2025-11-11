@@ -4,18 +4,21 @@
 
 Name:           sysfsutils
 Version:        2.1.1
-Release:        10%{?dist}
+Release:        11%{?dist}
 Summary:        Utilities for interfacing with sysfs
 URL:            https://github.com/linux-ras/sysfsutils
 License:        GPLv2
 
 Source0:        https://github.com/linux-ras/sysfsutils/archive/v%{version}.tar.gz
 
+Patch0:         sysfsutils-2.1.1-fix-my-strncat.patch
+
 BuildRequires:  autoconf
 BuildRequires:  automake
 BuildRequires:  libtool
 BuildRequires:  make
 BuildRequires:  gcc
+Requires:       libsysfs = %{version}-%{release}
 
 %description
 This package's purpose is to provide a set of utilities for interfacing
@@ -71,6 +74,10 @@ find %{buildroot} -type f -name "*.la" -delete
 
 
 %changelog
+* Tue Apr 22 2025 Vitezslav Crhonek <vcrhonek@redhat.com> - 2.1.1-11
+- Fix erroneous my_strncat implementation
+  Resolves: RHEL-83777
+
 * Wed Jan 26 2022 Chris White <chwhite@redhat.com> - 2.1.1-10
 - Rebuilding for RHEL9. Resolves rhbz#2043148
 
